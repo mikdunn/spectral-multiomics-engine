@@ -1,0 +1,16 @@
+numpy
+scipy
+pandas
+
+[dev]
+pytest
+ruff
+
+[encode]
+pyBigWig>=0.3.22
+
+[hic]
+cooler>=0.10.0
+
+[plot]
+matplotlib

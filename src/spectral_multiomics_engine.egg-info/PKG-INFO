@@ -1,0 +1,133 @@
+Metadata-Version: 2.4
+Name: spectral-multiomics-engine
+Version: 0.1.0
+Summary: Spectral multi-omics MVP: Laplacian eigenvectors + bin-based signal projection.
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: pandas
+Provides-Extra: plot
+Requires-Dist: matplotlib; extra == "plot"
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: ruff; extra == "dev"
+Provides-Extra: hic
+Requires-Dist: cooler>=0.10.0; extra == "hic"
+Provides-Extra: encode
+Requires-Dist: pyBigWig>=0.3.22; extra == "encode"
+
+## Real data demo (ENCODE ATAC-seq, GRCh38)
+
+This repo can run on a real ENCODE GM12878 ATAC-seq bigWig signal track (GRCh38).
+
+1) Install the optional dependency:
+
+- `pip install -e ".[encode]"`
+
+2) Run the end-to-end demo (downloads a small GRCh38 .cool contact map and the ENCODE bigWig, bins the signal, then runs the pipeline):
+
+- `spectral-multiomics demo-encode --out_dir outputs/demo_encode`
+
+This writes:
+
+- inputs under `data/real/encode_demo/`
+- outputs under `outputs/demo_encode/`
+# spectral-multiomics-engine
+
+A small, CPU-first **spectral multi-omics** prototype.
+
+MVP idea:
+
+1. Load a Hi-C/CHi-C-like **contact map** (adjacency matrix).
+2. Build a **graph Laplacian** and compute the first *k* eigenvectors (spectral basis).
+3. Load a **genomic signal track** (e.g., ATAC-seq / RNA-seq aggregated to bins).
+4. **Bin** the signal to the same genomic bins.
+5. **Project** the binned signal into spectral space.
+
+This repo is intentionally minimal and testable. It’s designed so we can later plug in real datasets like ManchesterBioinference (ATAC+RNA+CHi-C) without changing the math core.
+
+## What we reused from `dna-sequencing-and-imaging-svd`
+
+Your cloned repo (`C:\Users\dunnm\dna-sequencing-and-imaging-svd`) already contains good patterns we mirror here:
+
+- clean `argparse` CLIs (`repo4-scrna-spectral-pipeline/src/scrna_spectral/cli.py`)
+- small reporting helpers (`ensure_dir`, spectral/SVD diagnostics)
+- safe I/O and defensive preprocessing
+
+We’re not copying the scRNA code verbatim; we’re reusing the *structure* and approach.
+
+## Quick start (Windows PowerShell)
+
+1) Create a venv and install:
+
+- `python -m venv .venv`
+- `./.venv/Scripts/Activate.ps1`
+- `pip install -e .`
+
+1) Generate a synthetic dataset:
+
+- `spectral-multiomics synth --out_dir data/synthetic --n_bins 256 --seed 0`
+
+1) Run the pipeline on that synthetic dataset:
+
+- `spectral-multiomics run --contact data/synthetic/contact_map.npz --signal data/synthetic/signal.bedgraph.tsv --binsize 100000 --k 16 --out_dir outputs/demo_run`
+
+Outputs:
+
+- `outputs/demo_run/evecs.npy` (n_bins x k)
+- `outputs/demo_run/signal_binned.npy` (n_bins,)
+- `outputs/demo_run/projection.npy` (k,)
+- `outputs/demo_run/meta.json`
+
+## Real data demo (Hi-C Cooler)
+
+This repo can also run on a small, real **Hi-C** contact map in Cooler (`.cool`) format.
+
+1) Install the optional dependency:
+
+- `pip install -e ".[hic]"`
+
+1) Run the end-to-end demo (downloads a small yeast Hi-C `.cool`, generates a matching bedGraph signal from Hi-C coverage, then runs the pipeline):
+
+- `spectral-multiomics demo-cooler --out_dir outputs/demo_cooler`
+
+This writes:
+
+- inputs under `data/real/cooler_yeast_demo/`
+- outputs under `outputs/demo_cooler/`
+
+## Input formats
+
+
+### Contact map
+
+Supported:
+
+- `.npz` with arrays `row`, `col`, `data`, `shape` (COO sparse)
+- `.npy` dense matrix (square)
+- `.tsv` edge list: `i\tj\tweight` (0-based indices)
+
+Optional (requires `pip install -e ".[hic]"`):
+
+- `.cool` / `.mcool` via the `cooler` library (single chromosome per run for now)
+
+
+### Signal track (bedGraph-like)
+
+A TSV with columns:
+
+- `chrom\tstart\tend\tvalue`
+
+We currently assume a single chromosome per run (e.g. `chr1`) for MVP simplicity.
+
+## Notes / Troubleshooting
+
+- If PowerShell blocks activation scripts, run: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+- For very large contact maps, use the `.npz` sparse format.
+
+## Next steps
+
+- Add real-data ingestion (Cooler `.cool`, `.mcool`, or contact TSVs) + bigWig support.
+- Add multi-signal support (RNA + ATAC) and joint projections.
+- Add a notebook that visualizes eigenvectors and structure–function coupling plots.

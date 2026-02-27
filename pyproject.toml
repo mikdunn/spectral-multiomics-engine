@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spectral-multiomics-engine"
+version = "0.1.0"
+description = "Spectral multi-omics MVP: Laplacian eigenvectors + bin-based signal projection."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "scipy",
+  "pandas",
+]
+
+[project.optional-dependencies]
+plot = ["matplotlib"]
+dev = ["pytest", "ruff"]
+hic = ["cooler>=0.10.0"]
+encode = ["pyBigWig>=0.3.22"]
+
+[project.scripts]
+spectral-multiomics = "spectral_multiomics.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
